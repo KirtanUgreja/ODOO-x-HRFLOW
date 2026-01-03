@@ -1,0 +1,12 @@
+
+# Ignore all markdown files
+*.md
+!README.md
+
+# Ignore agent folder
+.agent/
+
+# Ignore env files
+.env
+.env.*
+!.env.example
