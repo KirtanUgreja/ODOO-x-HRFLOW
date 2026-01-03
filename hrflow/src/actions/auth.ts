@@ -26,13 +26,12 @@ export async function signup(prevState: any, formData: FormData) {
 
         const hashedPassword = await hashPassword(password)
 
-        // Create user (Public signup is always Admin)
+        // Create user
         const [newUser] = await db.insert(users).values({
             email,
             password_hash: hashedPassword,
             full_name: fullName,
             phone,
-            role: 'admin', // Enforce admin role for public signup
         }).returning()
 
         // Create empty profile
@@ -43,7 +42,7 @@ export async function signup(prevState: any, formData: FormData) {
         })
 
         // Create session
-        await createSession(newUser.id, 'admin')
+        await createSession(newUser.id)
     } catch (error) {
         console.error("Signup error:", error)
         return { error: "Failed to create account" }
@@ -55,7 +54,6 @@ export async function signup(prevState: any, formData: FormData) {
 export async function login(prevState: any, formData: FormData) {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
-    const selectedRole = formData.get("role") as string // Optional: if we want to enforce role check
 
     if (!email || !password) {
         return { error: "Missing required fields" }
@@ -66,11 +64,6 @@ export async function login(prevState: any, formData: FormData) {
 
         if (!user) {
             return { error: "Invalid credentials" }
-        }
-
-        // Optional: Block if trying to login as wrong role (if UI sends role)
-        if (selectedRole && user.role !== selectedRole) {
-            return { error: `Account exists as ${user.role}, please switch tabs.` }
         }
 
         const isValid = await verifyPassword(password, user.password_hash)
@@ -88,7 +81,7 @@ export async function login(prevState: any, formData: FormData) {
             })
         }
 
-        await createSession(user.id, user.role)
+        await createSession(user.id)
     } catch (error) {
         console.error("Login error:", error)
         return { error: "Internal server error" }
