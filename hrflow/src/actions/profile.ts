@@ -3,7 +3,7 @@
 
 import { db } from "@/lib/db"
 import { profiles, personalInfo, bankingInfo, skills, users } from "@/db/schema"
-import { eq } from "drizzle-orm"
+import { eq, getTableColumns } from "drizzle-orm"
 import { getSession } from "@/lib/auth"
 
 export async function getProfile() {
@@ -11,8 +11,15 @@ export async function getProfile() {
     if (!session) return null
 
     try {
-        const [userProfile] = await db.select().from(profiles).where(eq(profiles.id, session.userId))
-        return userProfile
+        const [result] = await db.select({
+            ...getTableColumns(profiles),
+            role: users.role
+        })
+            .from(profiles)
+            .innerJoin(users, eq(profiles.id, users.id))
+            .where(eq(profiles.id, session.userId))
+
+        return result
     } catch (error) {
         console.error("Error fetching profile:", error)
         return null
