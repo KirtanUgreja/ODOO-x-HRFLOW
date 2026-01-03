@@ -4,13 +4,14 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock, MapPin } from "lucide-react"
+import { formatDate, formatTime, getDateDaysAgo } from "@/lib/date-utils"
 
 export default function AttendancePage() {
     const [isCheckedIn, setIsCheckedIn] = useState(false)
     const [logs, setLogs] = useState([
-        { date: "Oct 24, 2025", checkIn: "09:00 AM", checkOut: "06:00 PM", status: "Present" },
-        { date: "Oct 23, 2025", checkIn: "09:15 AM", checkOut: "06:10 PM", status: "Present" },
-        { date: "Oct 22, 2025", checkIn: "09:05 AM", checkOut: "05:55 PM", status: "Present" },
+        { date: formatDate(getDateDaysAgo(1)), checkIn: "09:00 AM", checkOut: "06:00 PM", status: "Present" },
+        { date: formatDate(getDateDaysAgo(2)), checkIn: "09:15 AM", checkOut: "06:10 PM", status: "Present" },
+        { date: formatDate(getDateDaysAgo(3)), checkIn: "09:05 AM", checkOut: "05:55 PM", status: "Present" },
     ])
 
     const handleToggleAttendance = () => {
@@ -21,11 +22,11 @@ export default function AttendancePage() {
             // Logic for Check Out
             setIsCheckedIn(false)
             // Add mock log
-            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            const today = formatDate()
             setLogs([{
                 date: today,
                 checkIn: "09:00 AM",
-                checkOut: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                checkOut: formatTime(),
                 status: "Present"
             }, ...logs])
         }

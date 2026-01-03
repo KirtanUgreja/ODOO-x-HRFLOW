@@ -3,10 +3,10 @@
 
 import { Card } from "@/components/ui/card"
 import { Clock, Calendar, FileText, CheckCircle } from "lucide-react"
-
 import { getProfile } from "@/actions/profile"
 import { useEffect, useState } from "react"
 import { AttendanceChart } from "@/components/dashboard/attendance-chart"
+import { formatDate, getDateDaysAgo } from "@/lib/date-utils"
 
 export default function DashboardPage() {
     const [profile, setProfile] = useState<any>(null)
@@ -97,8 +97,8 @@ export default function DashboardPage() {
                             </thead>
                             <tbody className="divide-y">
                                 {[
-                                    { type: "Sick Leave", date: "Jan 12, 2026", status: "Approved", days: 1 },
-                                    { type: "Casual Leave", date: "Jan 24, 2026", status: "Pending", days: 2 },
+                                    { type: "Sick Leave", date: formatDate(getDateDaysAgo(5)), status: "Approved", days: 1 },
+                                    { type: "Casual Leave", date: formatDate(getDateDaysAgo(2)), status: "Pending", days: 2 },
                                 ].map((leave, i) => (
                                     <tr key={i}>
                                         <td className="py-3 font-medium text-text-main">{leave.type}</td>

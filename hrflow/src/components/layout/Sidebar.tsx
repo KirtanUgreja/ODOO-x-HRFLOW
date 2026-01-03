@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { logout } from "@/actions/auth"
+import { useState, useEffect } from "react"
 import {
     LayoutDashboard,
     User,
@@ -45,6 +46,44 @@ const sidebarItems = [
 
 export function Sidebar() {
     const pathname = usePathname()
+    const [currentDate, setCurrentDate] = useState(new Date())
+    
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"]
+    
+    const getDaysInMonth = (date: Date) => {
+        const year = date.getFullYear()
+        const month = date.getMonth()
+        const firstDay = new Date(year, month, 1).getDay()
+        const daysInMonth = new Date(year, month + 1, 0).getDate()
+        const today = new Date().getDate()
+        const isCurrentMonth = new Date().getMonth() === month && new Date().getFullYear() === year
+        
+        const days = []
+        
+        // Empty cells for days before month starts
+        for (let i = 0; i < firstDay; i++) {
+            days.push(<div key={`empty-${i}`} className="text-transparent">0</div>)
+        }
+        
+        // Days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const isToday = isCurrentMonth && day === today
+            days.push(
+                <div key={day} className={isToday ? "relative flex items-center justify-center" : "font-medium"}>
+                    {isToday ? (
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-coral text-white">
+                            {day}
+                        </span>
+                    ) : (
+                        day
+                    )}
+                </div>
+            )
+        }
+        
+        return days
+    }
 
     return (
         <div className="flex h-screen w-64 flex-col border-r bg-bg-card shadow-soft">
@@ -90,25 +129,23 @@ export function Sidebar() {
                 <div className="px-4">
                     <div className="mb-4 rounded-xl bg-gray-50 p-4">
                         <div className="mb-2 flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-text-main">January 2026</h3>
+                            <h3 className="text-sm font-semibold text-text-main">
+                                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                            </h3>
                             <div className="flex gap-1">
-                                <ChevronLeft className="h-4 w-4 text-text-muted" />
-                                <ChevronRight className="h-4 w-4 text-text-muted" />
+                                <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}>
+                                    <ChevronLeft className="h-4 w-4 text-text-muted hover:text-text-main" />
+                                </button>
+                                <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}>
+                                    <ChevronRight className="h-4 w-4 text-text-muted hover:text-text-main" />
+                                </button>
                             </div>
                         </div>
                         <div className="grid grid-cols-7 text-center text-[0.65rem] text-text-muted mb-2">
                             <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
                         </div>
                         <div className="grid grid-cols-7 gap-y-2 text-center text-xs">
-                            {/* Mock Calendar Days for Jan 2026 (Jan 1 is Thursday) */}
-                            <div className="text-transparent">0</div><div className="text-transparent">0</div><div className="text-transparent">0</div><div className="text-transparent">0</div>
-                            <div className="font-medium">1</div><div className="font-medium">2</div><div className="font-medium">3</div>
-                            <div className="font-medium">4</div><div className="font-medium">5</div><div className="font-medium">6</div><div className="font-medium">7</div><div className="font-medium">8</div><div className="font-medium">9</div><div className="font-medium">10</div>
-                            <div className="font-medium">11</div><div className="font-medium">12</div>
-                            <div className="relative flex items-center justify-center">
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-coral text-white">13</span>
-                            </div>
-                            <div className="font-medium">14</div><div className="font-medium">15</div><div className="font-medium">16</div><div className="font-medium">17</div>
+                            {getDaysInMonth(currentDate)}
                         </div>
                     </div>
                 </div>
