@@ -1,15 +1,19 @@
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Header } from "@/components/layout/Header"
 
-export default function DashboardLayout({
+import { getSession } from "@/lib/auth"
+
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    const session = await getSession()
+
     return (
         <div className="flex h-screen bg-bg-main">
             {/* Sidebar */}
-            <Sidebar />
+            <Sidebar role={session?.role} />
 
             {/* Main Content Area */}
             <div className="flex flex-1 flex-col overflow-hidden">
