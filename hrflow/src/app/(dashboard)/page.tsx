@@ -4,18 +4,29 @@
 import { Card } from "@/components/ui/card"
 import { Clock, Calendar, FileText, CheckCircle } from "lucide-react"
 import { getProfile } from "@/actions/profile"
+import { getAttendanceData } from "@/actions/attendance"
+import { getLeaveData } from "@/actions/leave"
 import { useEffect, useState } from "react"
 import { AttendanceChart } from "@/components/dashboard/attendance-chart"
 import { formatDate, getDateDaysAgo } from "@/lib/date-utils"
 
 export default function DashboardPage() {
     const [profile, setProfile] = useState<any>(null)
+    const [attendanceData, setAttendanceData] = useState<any>(null)
+    const [leaveData, setLeaveData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function fetchData() {
-            const data = await getProfile()
-            if (data) setProfile(data)
+            const [profileData, attendance, leaves] = await Promise.all([
+                getProfile(),
+                getAttendanceData(),
+                getLeaveData()
+            ])
+            
+            if (profileData) setProfile(profileData)
+            if (attendance) setAttendanceData(attendance)
+            if (leaves) setLeaveData(leaves)
             setLoading(false)
         }
         fetchData()
@@ -35,8 +46,17 @@ export default function DashboardPage() {
                         </p>
                     </div>
                     <div className="flex gap-4">
-                        <KPI_Card icon={Clock} label="Avg. Work Hrs" value="8h 42m" />
-                        <KPI_Card icon={CheckCircle} label="On Time" value="95%" />
+                        <KPI_Card 
+                            icon={Clock} 
+                            label="Avg. Work Hrs" 
+                            value={attendanceData?.monthlyStats?.totalHours ? `${Math.round(attendanceData.monthlyStats.totalHours)}h` : "0h"} 
+                        />
+                        <KPI_Card 
+                            icon={CheckCircle} 
+                            label="On Time" 
+                            value={attendanceData?.monthlyStats?.present && attendanceData?.monthlyStats?.total ? 
+                                `${Math.round((attendanceData.monthlyStats.present / attendanceData.monthlyStats.total) * 100)}%` : "0%"} 
+                        />
                     </div>
                 </div>
             </div>
@@ -63,17 +83,21 @@ export default function DashboardPage() {
                             Schedule
                         </h3>
                         <div className="space-y-4">
-                            {[1, 2, 3].map((i) => (
+                            {leaveData?.leaves?.slice(0, 3).map((leave: any, i: number) => (
                                 <div key={i} className="flex items-center gap-4">
                                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 font-bold">
-                                        {10 + i}
+                                        {new Date(leave.start_date).getDate()}
                                     </div>
                                     <div>
-                                        <p className="font-medium text-text-main">Team Meeting</p>
-                                        <p className="text-xs text-text-muted">10:00 AM - 11:00 AM</p>
+                                        <p className="font-medium text-text-main">{leave.leave_type}</p>
+                                        <p className="text-xs text-text-muted">{leave.status} - {leave.days} day(s)</p>
                                     </div>
                                 </div>
-                            ))}
+                            )) || [
+                                <div key="no-data" className="text-center text-text-muted py-4">
+                                    No upcoming events
+                                </div>
+                            ]}
                         </div>
                     </div>
                 </Card>
@@ -96,22 +120,28 @@ export default function DashboardPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {[
-                                    { type: "Sick Leave", date: formatDate(getDateDaysAgo(5)), status: "Approved", days: 1 },
-                                    { type: "Casual Leave", date: formatDate(getDateDaysAgo(2)), status: "Pending", days: 2 },
-                                ].map((leave, i) => (
+                                {leaveData?.leaves?.slice(0, 5).map((leave: any, i: number) => (
                                     <tr key={i}>
-                                        <td className="py-3 font-medium text-text-main">{leave.type}</td>
-                                        <td className="py-3 text-text-muted">{leave.date}</td>
+                                        <td className="py-3 font-medium text-text-main">{leave.leave_type}</td>
+                                        <td className="py-3 text-text-muted">{formatDate(leave.start_date)}</td>
                                         <td className="py-3">
-                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${leave.status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                                }`}>
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                leave.status === 'Approved' ? 'bg-green-100 text-green-800' : 
+                                                leave.status === 'Rejected' ? 'bg-red-100 text-red-800' : 
+                                                'bg-yellow-100 text-yellow-800'
+                                            }`}>
                                                 {leave.status}
                                             </span>
                                         </td>
                                         <td className="py-3 text-text-muted">{leave.days} Day(s)</td>
                                     </tr>
-                                ))}
+                                )) || [
+                                    <tr key="no-data">
+                                        <td colSpan={4} className="py-6 text-center text-text-muted">
+                                            No leave requests found
+                                        </td>
+                                    </tr>
+                                ]}
                             </tbody>
                         </table>
                     </div>
