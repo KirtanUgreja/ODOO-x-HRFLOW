@@ -2,9 +2,10 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { Clock, Calendar, FileText, CheckCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Clock, Calendar, FileText, CheckCircle, LogIn, LogOut } from "lucide-react"
 import { getProfile } from "@/actions/profile"
-import { getAttendanceData } from "@/actions/attendance"
+import { getAttendanceData, checkInOut, getTodayAttendance } from "@/actions/attendance"
 import { getLeaveData } from "@/actions/leave"
 import { useEffect, useState } from "react"
 import { AttendanceChart } from "@/components/dashboard/attendance-chart"
@@ -14,23 +15,47 @@ export default function DashboardPage() {
     const [profile, setProfile] = useState<any>(null)
     const [attendanceData, setAttendanceData] = useState<any>(null)
     const [leaveData, setLeaveData] = useState<any>(null)
+    const [todayAttendance, setTodayAttendance] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+    const [actionLoading, setActionLoading] = useState(false)
 
     useEffect(() => {
         async function fetchData() {
-            const [profileData, attendance, leaves] = await Promise.all([
+            const [profileData, attendance, leaves, todayData] = await Promise.all([
                 getProfile(),
                 getAttendanceData(),
-                getLeaveData()
+                getLeaveData(),
+                getTodayAttendance()
             ])
             
             if (profileData) setProfile(profileData)
             if (attendance) setAttendanceData(attendance)
             if (leaves) setLeaveData(leaves)
+            if (todayData) setTodayAttendance(todayData)
             setLoading(false)
         }
         fetchData()
     }, [])
+
+    const handleCheckInOut = async (action: 'checkin' | 'checkout') => {
+        setActionLoading(true)
+        try {
+            const result = await checkInOut(action)
+            if (result.success) {
+                // Refresh today's attendance data
+                const todayData = await getTodayAttendance()
+                setTodayAttendance(todayData)
+            } else {
+                alert(result.error || 'Failed to update attendance')
+            }
+        } catch (error) {
+            alert('An error occurred')
+        } finally {
+            setActionLoading(false)
+        }
+    }
+
+    const isCheckedIn = todayAttendance && !todayAttendance.check_out_time
 
     return (
         <div className="space-y-8">
@@ -45,18 +70,40 @@ export default function DashboardPage() {
                             Here's what's happening with you today.
                         </p>
                     </div>
-                    <div className="flex gap-4">
-                        <KPI_Card 
-                            icon={Clock} 
-                            label="Avg. Work Hrs" 
-                            value={attendanceData?.monthlyStats?.totalHours ? `${Math.round(attendanceData.monthlyStats.totalHours)}h` : "0h"} 
-                        />
-                        <KPI_Card 
-                            icon={CheckCircle} 
-                            label="On Time" 
-                            value={attendanceData?.monthlyStats?.present && attendanceData?.monthlyStats?.total ? 
-                                `${Math.round((attendanceData.monthlyStats.present / attendanceData.monthlyStats.total) * 100)}%` : "0%"} 
-                        />
+                    <div className="flex gap-4 items-center">
+                        <div className="flex gap-2">
+                            <Button 
+                                onClick={() => handleCheckInOut('checkin')}
+                                disabled={actionLoading || isCheckedIn}
+                                variant="action"
+                                className="bg-green-600 hover:bg-green-700"
+                            >
+                                <LogIn className="mr-2 h-4 w-4" />
+                                Check In
+                            </Button>
+                            <Button 
+                                onClick={() => handleCheckInOut('checkout')}
+                                disabled={actionLoading || !isCheckedIn}
+                                variant="action"
+                                className="bg-red-600 hover:bg-red-700"
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Check Out
+                            </Button>
+                        </div>
+                        <div className="flex gap-4">
+                            <KPI_Card 
+                                icon={Clock} 
+                                label="Avg. Work Hrs" 
+                                value={attendanceData?.monthlyStats?.totalHours ? `${Math.round(attendanceData.monthlyStats.totalHours)}h` : "0h"} 
+                            />
+                            <KPI_Card 
+                                icon={CheckCircle} 
+                                label="On Time" 
+                                value={attendanceData?.monthlyStats?.present && attendanceData?.monthlyStats?.total ? 
+                                    `${Math.round((attendanceData.monthlyStats.present / attendanceData.monthlyStats.total) * 100)}%` : "0%"} 
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
