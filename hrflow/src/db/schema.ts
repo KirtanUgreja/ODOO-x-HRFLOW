@@ -101,6 +101,7 @@ export const leaveRequests = pgTable('leave_requests', {
     days: numeric('days').notNull(),
     reason: text('reason'),
     status: text('status').default('Pending'),
+    admin_comment: text('admin_comment'),
     created_at: timestamp('created_at').defaultNow(),
 });
 

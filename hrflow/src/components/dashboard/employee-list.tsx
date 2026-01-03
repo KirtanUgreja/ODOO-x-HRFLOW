@@ -3,9 +3,10 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, Trash2, Edit2, Key, X } from "lucide-react"
-import { createEmployee, deleteEmployee, updateEmployee } from "@/actions/admin"
+import { Plus, Search, Trash2, Edit2, Key, X, Loader2 } from "lucide-react"
+import { createEmployee, deleteEmployee, updateEmployee, getEmployeeDetails } from "@/actions/admin"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 
 interface Employee {
@@ -23,7 +24,8 @@ export function EmployeeList({ initialEmployees }: { initialEmployees: Employee[
     const [searchTerm, setSearchTerm] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+    const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null)
+    const [isFetchingDetails, setIsFetchingDetails] = useState(false)
     const router = useRouter()
 
     const filteredEmployees = employees.filter(emp =>
@@ -38,7 +40,6 @@ export function EmployeeList({ initialEmployees }: { initialEmployees: Employee[
         if (res?.success) {
             setIsAddModalOpen(false)
             router.refresh()
-            // Optimistically update or wait for refresh? Refresh is safer.
         } else {
             alert(res?.error || "Failed to create")
         }
@@ -66,11 +67,33 @@ export function EmployeeList({ initialEmployees }: { initialEmployees: Employee[
         }
     }
 
-    // ... existing handleDelete ...
+    async function handleEditClick(employee: Employee) {
+        setIsFetchingDetails(true)
+        try {
+            const details = await getEmployeeDetails(employee.id)
+            if (details) {
+                // Flatten/merge for easier access if preferred, or keep structured.
+                // We'll keep structured but merge basic info just in case
+                setSelectedEmployee({
+                    ...employee,
+                    ...details.user, // basic user info
+                    profile: details.profile,
+                    personal: details.personal,
+                    banking: details.banking,
+                    salary: details.salary
+                })
+                setIsEditModalOpen(true)
+            }
+        } catch (error) {
+            console.error("Failed to fetch details", error)
+            alert("Failed to load employee details")
+        } finally {
+            setIsFetchingDetails(false)
+        }
+    }
 
     return (
         <div className="space-y-4">
-            {/* ... Search and Add Button ... */}
             <div className="flex items-center justify-between">
                 <div className="relative w-72">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
@@ -89,7 +112,6 @@ export function EmployeeList({ initialEmployees }: { initialEmployees: Employee[
             <div className="rounded-md border bg-white">
                 <div className="relative w-full overflow-auto">
                     <table className="w-full caption-bottom text-sm text-left">
-                        {/* ... thead ... */}
                         <thead className="[&_tr]:border-b">
                             <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                                 <th className="h-12 px-4 align-middle font-medium text-gray-900">Name</th>
@@ -115,11 +137,8 @@ export function EmployeeList({ initialEmployees }: { initialEmployees: Employee[
                                     </td>
                                     <td className="p-4 align-middle text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => {
-                                                setSelectedEmployee(employee)
-                                                setIsEditModalOpen(true)
-                                            }}>
-                                                <Edit2 className="h-4 w-4 text-gray-500" />
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(employee)} disabled={isFetchingDetails}>
+                                                {isFetchingDetails ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit2 className="h-4 w-4 text-gray-500" />}
                                             </Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDelete(employee.id)}>
                                                 <Trash2 className="h-4 w-4 text-red-500" />
@@ -162,14 +181,14 @@ export function EmployeeList({ initialEmployees }: { initialEmployees: Employee[
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Role</label>
-                                        <select name="role" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                        <select name="role" className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
                                             <option value="employee">Employee</option>
                                             <option value="admin">Admin</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Department</label>
-                                        <select name="department" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                        <select name="department" className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
                                             <option value="Engineering">Engineering</option>
                                             <option value="Marketing">Marketing</option>
                                             <option value="Sales">Sales</option>
@@ -184,7 +203,7 @@ export function EmployeeList({ initialEmployees }: { initialEmployees: Employee[
                                     <Input name="password" type="password" required />
                                 </div>
                                 <div className="flex justify-end gap-2 pt-4">
-                                    <Button variant="outline" type="button" onClick={() => setIsAddModalOpen(false)} className="text-gray-900 border-gray-300 hover:bg-gray-100">Cancel</Button>
+                                    <Button variant="outline" type="button" onClick={() => setIsAddModalOpen(false)} className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100">Cancel</Button>
                                     <Button type="submit" disabled={isLoading} className="bg-primary-coral">
                                         {isLoading ? "Creating..." : "Create Employee"}
                                     </Button>
@@ -198,57 +217,159 @@ export function EmployeeList({ initialEmployees }: { initialEmployees: Employee[
             {/* Edit Modal */}
             {isEditModalOpen && selectedEmployee && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <Card className="w-full max-w-lg shadow-lg">
+                    <Card className="w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Edit Employee</CardTitle>
+                            <CardTitle>Edit Employee: {selectedEmployee.full_name}</CardTitle>
                             <Button variant="ghost" size="icon" onClick={() => setIsEditModalOpen(false)}>
                                 <X className="h-4 w-4" />
                             </Button>
                         </CardHeader>
                         <CardContent>
-                            <form action={handleEdit} className="space-y-4">
+                            <form action={handleEdit}>
                                 <input type="hidden" name="id" value={selectedEmployee.id} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Full Name</label>
-                                        <Input name="fullName" defaultValue={selectedEmployee.full_name || ''} required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Phone</label>
-                                        <Input name="phone" defaultValue={selectedEmployee.phone || ''} />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Email</label>
-                                    <Input name="email" type="email" defaultValue={selectedEmployee.email} required />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Role</label>
-                                        <select name="role" defaultValue={selectedEmployee.role} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                            <option value="employee">Employee</option>
-                                            <option value="admin">Admin</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Department</label>
-                                        {/* Ideally fetch real department if available in selectedEmployee, defaulting to Engineering for now as field isn't in Employee interface yet */}
-                                        <select name="department" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                            <option value="Engineering">Engineering</option>
-                                            <option value="Marketing">Marketing</option>
-                                            <option value="Sales">Sales</option>
-                                            <option value="HR">HR</option>
-                                            <option value="Finance">Finance</option>
-                                            <option value="Design">Design</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">New Password <span className="text-xs text-muted-foreground font-normal">(Leave blank to keep current)</span></label>
-                                    <Input name="password" type="password" placeholder="Min 6 characters" />
-                                </div>
-                                <div className="flex justify-end gap-2 pt-4">
-                                    <Button variant="outline" type="button" onClick={() => setIsEditModalOpen(false)} className="text-gray-900 border-gray-300 hover:bg-gray-100">Cancel</Button>
+                                <Tabs defaultValue="profile" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-4">
+                                        <TabsTrigger value="profile">Profile</TabsTrigger>
+                                        <TabsTrigger value="personal">Personal</TabsTrigger>
+                                        <TabsTrigger value="banking">Banking</TabsTrigger>
+                                        <TabsTrigger value="payroll">Payroll</TabsTrigger>
+                                    </TabsList>
+
+                                    <TabsContent value="profile" className="space-y-4 pt-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Full Name</label>
+                                                <Input name="fullName" defaultValue={selectedEmployee.full_name || ''} required />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Phone</label>
+                                                <Input name="phone" defaultValue={selectedEmployee.phone || ''} />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Email</label>
+                                            <Input name="email" type="email" defaultValue={selectedEmployee.email} required />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Role</label>
+                                                <select name="role" defaultValue={selectedEmployee.role} className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                                    <option value="employee">Employee</option>
+                                                    <option value="admin">Admin</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Department</label>
+                                                <select name="department" defaultValue={selectedEmployee.profile?.department || 'Engineering'} className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                                    <option value="Engineering">Engineering</option>
+                                                    <option value="Marketing">Marketing</option>
+                                                    <option value="Sales">Sales</option>
+                                                    <option value="HR">HR</option>
+                                                    <option value="Finance">Finance</option>
+                                                    <option value="Design">Design</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">New Password <span className="text-xs text-muted-foreground font-normal">(Leave blank to keep current)</span></label>
+                                            <Input name="password" type="password" placeholder="Min 6 characters" />
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="personal" className="space-y-4 pt-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Date of Birth</label>
+                                                <Input name="dob" type="date" defaultValue={selectedEmployee.personal?.date_of_birth ? new Date(selectedEmployee.personal.date_of_birth).toISOString().split('T')[0] : ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Gender</label>
+                                                <select name="gender" defaultValue={selectedEmployee.personal?.gender || ''} className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                                    <option value="">Select Gender</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Residing Address</label>
+                                            <Input name="address" defaultValue={selectedEmployee.personal?.residing_address || ''} placeholder="123 Main St" />
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="banking" className="space-y-4 pt-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Bank Name</label>
+                                            <Input name="bankName" defaultValue={selectedEmployee.banking?.bank_name || ''} placeholder="Bank of America" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Account Number</label>
+                                                <Input name="accountNumber" defaultValue={selectedEmployee.banking?.account_number || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">IFSC/Routing Code</label>
+                                                <Input name="ifscCode" defaultValue={selectedEmployee.banking?.ifsc_code || ''} />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="payroll" className="space-y-4 pt-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">CTC</label>
+                                                <Input name="ctc" type="number" defaultValue={selectedEmployee.salary?.ctc || ''} placeholder="Yearly CTC" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Basic Salary</label>
+                                                <Input name="basicSalary" type="number" defaultValue={selectedEmployee.salary?.basic_salary || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">HRA</label>
+                                                <Input name="hra" type="number" defaultValue={selectedEmployee.salary?.hra || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Standard Allowance</label>
+                                                <Input name="standardAllowance" type="number" defaultValue={selectedEmployee.salary?.standard_allowance || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Fixed Allowance</label>
+                                                <Input name="fixedAllowance" type="number" defaultValue={selectedEmployee.salary?.fixed_allowance || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Performance Bonus</label>
+                                                <Input name="performanceBonus" type="number" defaultValue={selectedEmployee.salary?.performance_bonus || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">LTA</label>
+                                                <Input name="lta" type="number" defaultValue={selectedEmployee.salary?.lta || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Professional Tax</label>
+                                                <Input name="professionalTax" type="number" defaultValue={selectedEmployee.salary?.professional_tax || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Employee PF</label>
+                                                <Input name="employeePf" type="number" defaultValue={selectedEmployee.salary?.employee_pf || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Employer PF</label>
+                                                <Input name="employerPf" type="number" defaultValue={selectedEmployee.salary?.employer_pf || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Gross Salary</label>
+                                                <Input name="grossSalary" type="number" defaultValue={selectedEmployee.salary?.gross_salary || ''} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium">Net Salary</label>
+                                                <Input name="netSalary" type="number" defaultValue={selectedEmployee.salary?.net_salary || ''} />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                </Tabs>
+
+                                <div className="flex justify-end gap-2 pt-6">
+                                    <Button variant="outline" type="button" onClick={() => setIsEditModalOpen(false)} className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100">Cancel</Button>
                                     <Button type="submit" disabled={isLoading} className="bg-primary-coral">
                                         {isLoading ? "Save Changes" : "Update Employee"}
                                     </Button>
