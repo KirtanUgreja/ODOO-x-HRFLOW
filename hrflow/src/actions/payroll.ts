@@ -80,3 +80,26 @@ export async function getSalarySlipData() {
         return null
     }
 }
+
+
+export async function getAllSalaries() {
+    const session = await getSession()
+    if (!session || session.role !== 'admin') return []
+
+    try {
+        const salaries = await db.select({
+            id: users.id,
+            full_name: users.full_name,
+            email: users.email,
+            net_salary: salaryInfo.net_salary,
+            ctc: salaryInfo.ctc
+        })
+            .from(users)
+            .leftJoin(salaryInfo, eq(users.id, salaryInfo.user_id))
+
+        return salaries
+    } catch (error) {
+        console.error("Error fetching all salaries:", error)
+        return []
+    }
+}

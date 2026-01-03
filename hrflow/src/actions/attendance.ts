@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { attendance } from "@/db/schema"
+import { attendance, users } from "@/db/schema"
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm"
 import { getSession } from "@/lib/auth"
 
@@ -29,12 +29,12 @@ export async function getAttendanceData() {
             late: sql<number>`count(case when status = 'Late' then 1 end)`,
             totalHours: sql<number>`sum(extract(epoch from (check_out_time - check_in_time))/3600)`
         })
-        .from(attendance)
-        .where(and(
-            eq(attendance.user_id, session.userId),
-            gte(attendance.date, firstDay.toISOString().split('T')[0]),
-            lte(attendance.date, lastDay.toISOString().split('T')[0])
-        ))
+            .from(attendance)
+            .where(and(
+                eq(attendance.user_id, session.userId),
+                gte(attendance.date, firstDay.toISOString().split('T')[0]),
+                lte(attendance.date, lastDay.toISOString().split('T')[0])
+            ))
 
         return {
             recentAttendance,
@@ -95,7 +95,7 @@ export async function getTodayAttendance() {
 
     try {
         const today = new Date().toISOString().split('T')[0]
-        
+
         // Get latest session to determine current status
         const [latestSession] = await db.select()
             .from(attendance)
@@ -110,5 +110,33 @@ export async function getTodayAttendance() {
     } catch (error) {
         console.error("Error fetching today's attendance:", error)
         return null
+    }
+}
+
+
+export async function getAllAttendance(date: string = new Date().toISOString().split('T')[0]) {
+    const session = await getSession()
+    if (!session || session.role !== 'admin') return []
+
+    try {
+        const records = await db.select({
+            id: attendance.id,
+            user_id: attendance.user_id,
+            date: attendance.date,
+            check_in_time: attendance.check_in_time,
+            check_out_time: attendance.check_out_time,
+            status: attendance.status,
+            full_name: users.full_name,
+            email: users.email
+        })
+            .from(attendance)
+            .innerJoin(users, eq(attendance.user_id, users.id))
+            .where(eq(attendance.date, date))
+            .orderBy(desc(attendance.check_in_time))
+
+        return records
+    } catch (error) {
+        console.error("Error fetching all attendance:", error)
+        return []
     }
 }
