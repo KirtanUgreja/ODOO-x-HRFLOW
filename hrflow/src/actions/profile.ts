@@ -44,15 +44,19 @@ export async function updatePersonalInfo(data: any) {
     try {
         await db.insert(personalInfo).values({
             user_id: session.userId,
-            ...data
+            ...data,
+            updated_at: new Date()
         }).onConflictDoUpdate({
             target: personalInfo.user_id,
-            set: data
+            set: {
+                ...data,
+                updated_at: new Date()
+            }
         })
         return { success: true }
     } catch (e) {
-        console.error(e)
-        return { error: "Failed to update" }
+        console.error('Database error in updatePersonalInfo:', e)
+        return { error: "Failed to update personal information" }
     }
 }
 
