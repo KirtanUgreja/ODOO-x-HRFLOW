@@ -13,7 +13,8 @@ import {
     CreditCard,
     ChevronLeft,
     ChevronRight,
-    LogOut
+    LogOut,
+    Users
 } from "lucide-react"
 
 const sidebarItems = [
@@ -21,36 +22,48 @@ const sidebarItems = [
         title: "Dashboard",
         href: "/",
         icon: LayoutDashboard,
+        roles: ['admin', 'employee']
+    },
+    {
+        title: "Employees", // Admin only
+        href: "/employees",
+        icon: Users,
+        roles: ['admin']
     },
     {
         title: "Profile",
         href: "/profile",
         icon: User,
+        roles: ['admin', 'employee']
     },
     {
         title: "Attendance",
         href: "/attendance",
         icon: CalendarCheck,
+        roles: ['admin', 'employee']
     },
     {
         title: "Leave",
         href: "/leave",
         icon: CalendarDays,
+        roles: ['admin', 'employee']
     },
     {
         title: "Payroll",
         href: "/payroll",
         icon: CreditCard,
+        roles: ['admin', 'employee']
     },
 ]
 
-export function Sidebar() {
+export function Sidebar({ role = 'employee' }: { role?: string }) {
+    // ...
     const pathname = usePathname()
     const [currentDate, setCurrentDate] = useState(new Date())
-    
+
     const monthNames = ["January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"]
-    
+
     const getDaysInMonth = (date: Date) => {
         const year = date.getFullYear()
         const month = date.getMonth()
@@ -58,14 +71,14 @@ export function Sidebar() {
         const daysInMonth = new Date(year, month + 1, 0).getDate()
         const today = new Date().getDate()
         const isCurrentMonth = new Date().getMonth() === month && new Date().getFullYear() === year
-        
+
         const days = []
-        
+
         // Empty cells for days before month starts
         for (let i = 0; i < firstDay; i++) {
             days.push(<div key={`empty-${i}`} className="text-transparent">0</div>)
         }
-        
+
         // Days of the month
         for (let day = 1; day <= daysInMonth; day++) {
             const isToday = isCurrentMonth && day === today
@@ -81,7 +94,7 @@ export function Sidebar() {
                 </div>
             )
         }
-        
+
         return days
     }
 
@@ -94,7 +107,7 @@ export function Sidebar() {
             </div>
             <div className="flex-1 overflow-y-auto py-6">
                 <nav className="space-y-1 px-4">
-                    {sidebarItems.map((item) => {
+                    {sidebarItems.filter(item => !item.roles || item.roles.includes(role)).map((item) => {
                         // Check if active (exact match or sub-path)
                         // For root dashboard, exact match. For others, startsWith
                         const isActive =
