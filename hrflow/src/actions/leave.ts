@@ -104,12 +104,15 @@ export async function getAllLeaveRequests() {
     }
 }
 
-export async function updateLeaveStatus(id: string, status: 'Approved' | 'Rejected') {
+export async function updateLeaveStatus(id: string, status: 'Approved' | 'Rejected', comment?: string) {
     const session = await getSession()
     if (!session || session.role !== 'admin') return { error: "Unauthorized" }
 
     try {
-        await db.update(leaveRequests).set({ status }).where(eq(leaveRequests.id, id))
+        await db.update(leaveRequests).set({
+            status,
+            admin_comment: comment
+        }).where(eq(leaveRequests.id, id))
         return { success: true }
     } catch (error) {
         console.error("Error updating leave status:", error)

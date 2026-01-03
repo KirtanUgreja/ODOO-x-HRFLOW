@@ -5,6 +5,7 @@ import { db } from "@/lib/db"
 import { profiles, personalInfo, bankingInfo, skills, users } from "@/db/schema"
 import { eq, getTableColumns } from "drizzle-orm"
 import { getSession } from "@/lib/auth"
+import { revalidatePath } from "next/cache"
 
 export async function getProfile() {
     const session = await getSession()
@@ -96,6 +97,7 @@ export async function addSkill(skillName: string) {
             skill_name: skillName,
             proficiency_level: "Intermediate"
         }).returning()
+        revalidatePath('/profile')
         return { data: newSkill }
     } catch (e) {
         return { error: "Failed to add skill" }
@@ -108,8 +110,42 @@ export async function removeSkill(skillId: string) {
 
     try {
         await db.delete(skills).where(eq(skills.id, skillId))
+        revalidatePath('/profile')
         return { success: true }
     } catch (e) {
         return { error: "Failed to delete skill" }
+    }
+}
+
+export async function updateBasicProfile(prevState: any, formData: FormData) {
+    const session = await getSession()
+    if (!session) return { error: "Unauthorized" }
+
+    const fullName = formData.get("fullName") as string
+    const phone = formData.get("phone") as string
+    const location = formData.get("location") as string
+    const about = formData.get("about") as string
+
+    try {
+        // Update user table
+        await db.update(users).set({
+            full_name: fullName,
+            phone: phone
+        }).where(eq(users.id, session.userId))
+
+        // Update profile table
+        await db.update(profiles).set({
+            full_name: fullName, // keeping redundant in sync if needed, or rely on joins. Assuming simple sync.
+            location: location,
+            about: about,
+            // company: formData.get("company") as string || 'Dayflow', // Avoid overwriting if not provided, or handle elsewhere
+            // department: formData.get("department") as string
+        }).where(eq(profiles.id, session.userId))
+
+        revalidatePath('/profile')
+        return { success: "Profile updated successfully" }
+    } catch (e) {
+        console.error("Update profile error:", e)
+        return { error: "Failed to update profile" }
     }
 }

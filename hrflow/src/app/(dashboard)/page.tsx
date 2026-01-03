@@ -8,6 +8,7 @@ import { getProfile } from "@/actions/profile"
 import { getAttendanceData, checkInOut, getTodayAttendance } from "@/actions/attendance"
 import { getLeaveData } from "@/actions/leave"
 import { getAdminStats } from "@/actions/admin-stats"
+import { getPresentEmployees, getAllAttendance } from "@/actions/admin"
 import { useEffect, useState } from "react"
 import { AttendanceChart } from "@/components/dashboard/attendance-chart"
 import { formatDate, getDateDaysAgo } from "@/lib/date-utils"
@@ -19,6 +20,8 @@ export default function DashboardPage() {
     const [leaveData, setLeaveData] = useState<any>(null)
     const [todayAttendance, setTodayAttendance] = useState<any>(null)
     const [adminStats, setAdminStats] = useState<any>(null)
+    const [presentEmployees, setPresentEmployees] = useState<any[]>([])
+    const [attendanceLogs, setAttendanceLogs] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [actionLoading, setActionLoading] = useState(false)
 
@@ -38,6 +41,8 @@ export default function DashboardPage() {
 
                 if (profileData.role === 'admin') {
                     promises.push(getAdminStats())
+                    promises.push(getPresentEmployees())
+                    promises.push(getAllAttendance())
                 }
 
                 const results = await Promise.all(promises)
@@ -48,6 +53,8 @@ export default function DashboardPage() {
 
                 if (profileData.role === 'admin') {
                     setAdminStats(results[3])
+                    setPresentEmployees(results[4])
+                    setAttendanceLogs(results[5])
                 }
             }
 
@@ -80,7 +87,11 @@ export default function DashboardPage() {
     }
 
     if (profile?.role === 'admin' && adminStats) {
-        return <AdminDashboard stats={adminStats} />
+        return <AdminDashboard
+            stats={adminStats}
+            presentEmployees={presentEmployees}
+            attendanceLogs={attendanceLogs}
+        />
     }
 
     return (

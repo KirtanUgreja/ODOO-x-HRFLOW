@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Calendar, Clock, BarChart as BarChartIcon } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+import { AttendanceList } from "./attendance-list"
+import { PresentEmployees } from "./present-employees"
+
 interface AdminStats {
     totalEmployees: number
     pendingLeaves: number
@@ -12,7 +15,11 @@ interface AdminStats {
     departmentStats: Array<{ name: string, employees: number }>
 }
 
-export function AdminDashboard({ stats }: { stats: AdminStats }) {
+export function AdminDashboard({ stats, presentEmployees, attendanceLogs }: {
+    stats: AdminStats,
+    presentEmployees: any[],
+    attendanceLogs: any[]
+}) {
     const chartData = stats.departmentStats || []
 
     return (
@@ -83,25 +90,14 @@ export function AdminDashboard({ stats }: { stats: AdminStats }) {
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {/* Mock recent activity list - left as simpler mock for now */}
-                            <div className="flex items-center">
-                                <span className="relative flex h-2 w-2 mr-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                </span>
-                                <p className="text-sm font-medium leading-none">New employee registered</p>
-                                <div className="ml-auto text-xs text-muted-foreground">2m ago</div>
-                            </div>
-                            {/* ... more items */}
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="col-span-3">
+                    <PresentEmployees data={presentEmployees} />
+                </div>
+            </div>
+
+            {/* Attendance Logs */}
+            <div className="grid gap-4">
+                <AttendanceList data={attendanceLogs} />
             </div>
         </div>
     )
