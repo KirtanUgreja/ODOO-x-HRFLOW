@@ -25,7 +25,7 @@ export default function LeavePage() {
                         <form className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Leave Type</label>
-                                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                <select className="flex h-10 w-full rounded-md border border-gray-300 bg-gray-50 text-gray-900 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-coral focus-visible:border-primary-coral">
                                     <option>Sick Leave</option>
                                     <option>Casual Leave</option>
                                     <option>Earned Leave</option>
