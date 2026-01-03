@@ -4,11 +4,25 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download } from "lucide-react"
 import { useEffect, useState } from "react"
-import { getSalaryData } from "@/actions/payroll"
+import { getSalaryData, getSalarySlipData } from "@/actions/payroll"
+import { generateSalarySlipPDF } from "@/lib/pdf-generator"
 
 export default function PayrollPage() {
     const [salaryData, setSalaryData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+
+    const handleDownloadPDF = async () => {
+        try {
+            const slipData = await getSalarySlipData()
+            if (slipData) {
+                const pdf = generateSalarySlipPDF(slipData)
+                const fileName = `salary-slip-${new Date().toISOString().slice(0, 7)}.pdf`
+                pdf.save(fileName)
+            }
+        } catch (error) {
+            console.error('Error generating PDF:', error)
+        }
+    }
 
     useEffect(() => {
         async function fetchData() {
@@ -51,7 +65,7 @@ export default function PayrollPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-text-main">My Payroll</h2>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2" onClick={handleDownloadPDF}>
                     <Download className="h-4 w-4" /> Download Salary Slip
                 </Button>
             </div>

@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { salaryInfo, bankingInfo } from "@/db/schema"
+import { salaryInfo, bankingInfo, users } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { getSession } from "@/lib/auth"
 
@@ -46,6 +46,37 @@ export async function getSalaryData() {
         }
     } catch (error) {
         console.error("Error fetching salary data:", error)
+        return null
+    }
+}
+
+export async function getSalarySlipData() {
+    const session = await getSession()
+    if (!session) return null
+
+    try {
+        // Get user info
+        const [user] = await db.select()
+            .from(users)
+            .where(eq(users.id, session.userId))
+
+        // Get salary info
+        const [salary] = await db.select()
+            .from(salaryInfo)
+            .where(eq(salaryInfo.user_id, session.userId))
+
+        // Get banking info
+        const [banking] = await db.select()
+            .from(bankingInfo)
+            .where(eq(bankingInfo.user_id, session.userId))
+
+        return {
+            user,
+            salary,
+            banking
+        }
+    } catch (error) {
+        console.error("Error fetching salary slip data:", error)
         return null
     }
 }
