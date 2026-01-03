@@ -1,6 +1,7 @@
 "use client"
 
-import { Bell } from "lucide-react"
+import { Bell, Calendar } from "lucide-react"
+import { formatDate } from "@/lib/date-utils"
 
 export function Header() {
     return (
@@ -9,6 +10,10 @@ export function Header() {
                 <h2 className="text-xl font-semibold text-text-main">
                     Welcome back, Employee
                 </h2>
+                <div className="flex items-center gap-2 text-text-muted">
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-sm">{formatDate()}</span>
+                </div>
             </div>
             <div className="flex items-center gap-6">
                 <button className="relative text-text-muted hover:text-text-main">

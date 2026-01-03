@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
+import { formatDate, getDateDaysAgo } from "@/lib/date-utils"
 
 export default function LeavePage() {
     const [leaves, setLeaves] = useState([
-        { type: "Sick Leave", startDate: "Jan 12, 2026", endDate: "Jan 13, 2026", days: 2, status: "Approved", reason: "Viral fever" },
-        { type: "Casual Leave", startDate: "Dec 24, 2025", endDate: "Dec 25, 2025", days: 2, status: "Rejected", reason: "Holiday trip" },
+        { type: "Sick Leave", startDate: formatDate(getDateDaysAgo(10)), endDate: formatDate(getDateDaysAgo(9)), days: 2, status: "Approved", reason: "Viral fever" },
+        { type: "Casual Leave", startDate: formatDate(getDateDaysAgo(15)), endDate: formatDate(getDateDaysAgo(14)), days: 2, status: "Rejected", reason: "Holiday trip" },
     ])
 
     return (
@@ -33,11 +34,11 @@ export default function LeavePage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">From</label>
-                                    <Input type="date" />
+                                    <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">To</label>
-                                    <Input type="date" />
+                                    <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
                                 </div>
                             </div>
                             <div className="space-y-2">
