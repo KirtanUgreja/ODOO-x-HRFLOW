@@ -21,7 +21,7 @@ export async function getSalaryData() {
             .where(eq(bankingInfo.user_id, session.userId))
 
         if (!salary) {
-            // Return default/empty salary structure if no data exists
+            // Return default/empty salary structure but include banking info
             return {
                 salary: {
                     basic_salary: "0",
@@ -36,7 +36,7 @@ export async function getSalaryData() {
                     net_salary: "0",
                     ctc: "0"
                 },
-                banking: null
+                banking
             }
         }
 

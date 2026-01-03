@@ -87,8 +87,17 @@ export default function PayrollPage() {
                             <p className="text-xl font-bold">31</p>
                         </div>
                         <div>
-                            <p className="text-sm text-text-muted">Account</p>
-                            <p className="text-xl font-bold">{banking?.account_number ? `****${banking.account_number.slice(-4)}` : 'Not Set'}</p>
+                            <p className="text-sm text-text-muted">Bank Account</p>
+                            <p className="text-xl font-bold">
+                                {banking?.account_number ? (
+                                    <span className="flex flex-col">
+                                        <span>{banking.account_number}</span>
+                                        {banking.bank_name && <span className="text-sm font-normal text-text-muted">{banking.bank_name}</span>}
+                                    </span>
+                                ) : (
+                                    <span className="text-red-500">Not Set</span>
+                                )}
+                            </p>
                         </div>
                         <div>
                             <p className="text-sm text-text-muted">CTC (Annual)</p>

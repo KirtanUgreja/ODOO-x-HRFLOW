@@ -27,13 +27,15 @@ export function generateSalarySlipPDF(data: SalaryData) {
   pdf.setFont('helvetica', 'normal')
   pdf.text(`Name: ${user?.full_name || 'N/A'}`, 20, 60)
   pdf.text(`Email: ${user?.email || 'N/A'}`, 20, 70)
-  pdf.text(`Account: ${banking?.account_number ? `****${banking.account_number.slice(-4)}` : 'Not Set'}`, 20, 80)
-  pdf.text(`Pay Period: ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`, 20, 90)
+  pdf.text(`Bank: ${banking?.bank_name || 'N/A'}`, 20, 80)
+  pdf.text(`Account: ${banking?.account_number ? `****${banking.account_number.slice(-4)}` : 'Not Set'}`, 20, 90)
+  pdf.text(`IFSC: ${banking?.ifsc_code || 'N/A'}`, 20, 100)
+  pdf.text(`Pay Period: ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`, 20, 110)
   
   // Earnings Section
   pdf.setFont('helvetica', 'bold')
-  pdf.text('EARNINGS', 20, 110)
-  pdf.line(20, 115, 90, 115)
+  pdf.text('EARNINGS', 20, 130)
+  pdf.line(20, 135, 90, 135)
   
   const earnings = [
     ['Basic Salary', Number(salary?.basic_salary || 0)],
@@ -44,7 +46,7 @@ export function generateSalarySlipPDF(data: SalaryData) {
     ['Fixed Allowance', Number(salary?.fixed_allowance || 0)]
   ]
   
-  let yPos = 125
+  let yPos = 145
   pdf.setFont('helvetica', 'normal')
   earnings.forEach(([label, amount]) => {
     pdf.text(label as string, 20, yPos)
@@ -58,8 +60,8 @@ export function generateSalarySlipPDF(data: SalaryData) {
   pdf.text(`₹${Number(salary?.gross_salary || 0).toLocaleString()}`, 80, yPos + 5, { align: 'right' })
   
   // Deductions Section
-  pdf.text('DEDUCTIONS', 110, 110)
-  pdf.line(110, 115, 180, 115)
+  pdf.text('DEDUCTIONS', 110, 130)
+  pdf.line(110, 135, 180, 135)
   
   const deductions = [
     ['Employee PF', Number(salary?.employee_pf || 0)],
@@ -67,7 +69,7 @@ export function generateSalarySlipPDF(data: SalaryData) {
     ['TDS', 0]
   ]
   
-  yPos = 125
+  yPos = 145
   pdf.setFont('helvetica', 'normal')
   deductions.forEach(([label, amount]) => {
     pdf.text(label as string, 110, yPos)
