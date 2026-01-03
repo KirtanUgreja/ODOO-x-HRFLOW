@@ -1,13 +1,15 @@
-export const formatDate = (date: Date = new Date()) => {
-  return date.toLocaleDateString('en-US', { 
+export const formatDate = (date: Date | string = new Date()) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return dateObj.toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric', 
     year: 'numeric' 
   })
 }
 
-export const formatDateTime = (date: Date = new Date()) => {
-  return date.toLocaleString('en-US', {
+export const formatDateTime = (date: Date | string = new Date()) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return dateObj.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric', 
     year: 'numeric',
@@ -16,8 +18,9 @@ export const formatDateTime = (date: Date = new Date()) => {
   })
 }
 
-export const formatTime = (date: Date = new Date()) => {
-  return date.toLocaleTimeString('en-US', { 
+export const formatTime = (date: Date | string = new Date()) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return dateObj.toLocaleTimeString('en-US', { 
     hour: '2-digit', 
     minute: '2-digit' 
   })

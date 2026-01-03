@@ -11,6 +11,7 @@ import { updatePersonalInfo } from "@/actions/profile"
 export function PersonalInfo({ initialData }: { initialData?: any }) {
     const [isEditing, setIsEditing] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
     const [formData, setFormData] = useState({
         date_of_birth: "",
         gender: "",
@@ -35,12 +36,17 @@ export function PersonalInfo({ initialData }: { initialData?: any }) {
 
     const handleSave = async () => {
         setLoading(true)
+        setError(null)
         try {
             const res = await updatePersonalInfo(formData)
-            if (res.error) throw new Error(res.error)
+            if (res.error) {
+                setError(res.error)
+                return
+            }
             setIsEditing(false)
         } catch (error) {
             console.error('Error saving personal info:', error)
+            setError('An unexpected error occurred. Please try again.')
         } finally {
             setLoading(false)
         }
@@ -58,6 +64,11 @@ export function PersonalInfo({ initialData }: { initialData?: any }) {
                 </Button>
             </CardHeader>
             <CardContent className="mt-4 space-y-4">
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                        {error}
+                    </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-text-muted">Date of Birth</label>
