@@ -32,6 +32,7 @@ export async function signup(prevState: any, formData: FormData) {
             password_hash: hashedPassword,
             full_name: fullName,
             phone,
+            role: 'admin', // Public signup is for admins
         }).returning()
 
         // Create empty profile
@@ -42,7 +43,7 @@ export async function signup(prevState: any, formData: FormData) {
         })
 
         // Create session
-        await createSession(newUser.id)
+        await createSession(newUser.id, newUser.role)
     } catch (error) {
         console.error("Signup error:", error)
         return { error: "Failed to create account" }
@@ -81,7 +82,7 @@ export async function login(prevState: any, formData: FormData) {
             })
         }
 
-        await createSession(user.id)
+        await createSession(user.id, user.role)
     } catch (error) {
         console.error("Login error:", error)
         return { error: "Internal server error" }

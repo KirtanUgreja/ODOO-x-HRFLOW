@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { leaveRequests } from "@/db/schema"
+import { leaveRequests, users } from "@/db/schema"
 import { eq, desc, sql } from "drizzle-orm"
 import { getSession } from "@/lib/auth"
 
@@ -21,8 +21,8 @@ export async function getLeaveData() {
         const usedLeaves = await db.select({
             total: sql<number>`sum(days)`
         })
-        .from(leaveRequests)
-        .where(eq(leaveRequests.user_id, session.userId))
+            .from(leaveRequests)
+            .where(eq(leaveRequests.user_id, session.userId))
 
         const totalLeaves = 24
         const used = Number(usedLeaves[0]?.total || 0)
@@ -72,5 +72,47 @@ export async function submitLeaveRequest(data: {
     } catch (error) {
         console.error("Error submitting leave request:", error)
         return { error: "Failed to submit leave request" }
+    }
+}
+
+
+export async function getAllLeaveRequests() {
+    const session = await getSession()
+    if (!session || session.role !== 'admin') return []
+
+    try {
+        const requests = await db.select({
+            id: leaveRequests.id,
+            leave_type: leaveRequests.leave_type,
+            start_date: leaveRequests.start_date,
+            end_date: leaveRequests.end_date,
+            days: leaveRequests.days,
+            reason: leaveRequests.reason,
+            status: leaveRequests.status,
+            created_at: leaveRequests.created_at,
+            full_name: users.full_name,
+            email: users.email
+        })
+            .from(leaveRequests)
+            .innerJoin(users, eq(leaveRequests.user_id, users.id))
+            .orderBy(desc(leaveRequests.created_at))
+
+        return requests
+    } catch (error) {
+        console.error("Error fetching leave requests:", error)
+        return []
+    }
+}
+
+export async function updateLeaveStatus(id: string, status: 'Approved' | 'Rejected') {
+    const session = await getSession()
+    if (!session || session.role !== 'admin') return { error: "Unauthorized" }
+
+    try {
+        await db.update(leaveRequests).set({ status }).where(eq(leaveRequests.id, id))
+        return { success: true }
+    } catch (error) {
+        console.error("Error updating leave status:", error)
+        return { error: "Failed to update status" }
     }
 }
