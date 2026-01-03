@@ -17,6 +17,7 @@ export async function createEmployee(prevState: any, formData: FormData) {
     const fullName = formData.get("fullName") as string
     const role = (formData.get("role") as string) || 'employee'
     const phone = formData.get("phone") as string
+    const department = (formData.get("department") as string) || 'Engineering'
 
     if (!email || !password || !fullName) {
         return { error: "Missing required fields" }
@@ -38,10 +39,16 @@ export async function createEmployee(prevState: any, formData: FormData) {
             phone,
         }).returning()
 
+        if (!newUser) {
+            console.error("Failed to insert user into users table")
+            return { error: "Failed to create user record" }
+        }
+
         await db.insert(profiles).values({
             id: newUser.id,
             email: newUser.email,
             full_name: newUser.full_name,
+            department: department
         })
 
         revalidatePath('/employees')

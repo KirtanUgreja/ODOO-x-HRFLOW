@@ -7,31 +7,50 @@ import { Clock, Calendar, FileText, CheckCircle, LogIn, LogOut } from "lucide-re
 import { getProfile } from "@/actions/profile"
 import { getAttendanceData, checkInOut, getTodayAttendance } from "@/actions/attendance"
 import { getLeaveData } from "@/actions/leave"
+import { getAdminStats } from "@/actions/admin-stats"
 import { useEffect, useState } from "react"
 import { AttendanceChart } from "@/components/dashboard/attendance-chart"
 import { formatDate, getDateDaysAgo } from "@/lib/date-utils"
+import { AdminDashboard } from "@/components/dashboard/admin-dashboard"
 
 export default function DashboardPage() {
     const [profile, setProfile] = useState<any>(null)
     const [attendanceData, setAttendanceData] = useState<any>(null)
     const [leaveData, setLeaveData] = useState<any>(null)
     const [todayAttendance, setTodayAttendance] = useState<any>(null)
+    const [adminStats, setAdminStats] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [actionLoading, setActionLoading] = useState(false)
 
     useEffect(() => {
         async function fetchData() {
-            const [profileData, attendance, leaves, todayData] = await Promise.all([
-                getProfile(),
-                getAttendanceData(),
-                getLeaveData(),
-                getTodayAttendance()
-            ])
-            
-            if (profileData) setProfile(profileData)
-            if (attendance) setAttendanceData(attendance)
-            if (leaves) setLeaveData(leaves)
-            if (todayData) setTodayAttendance(todayData)
+            // First get profile to check role
+            const profileData = await getProfile()
+
+            if (profileData) {
+                setProfile(profileData)
+
+                const promises: Promise<any>[] = [
+                    getAttendanceData(),
+                    getLeaveData(),
+                    getTodayAttendance()
+                ]
+
+                if (profileData.role === 'admin') {
+                    promises.push(getAdminStats())
+                }
+
+                const results = await Promise.all(promises)
+
+                setAttendanceData(results[0])
+                setLeaveData(results[1])
+                setTodayAttendance(results[2])
+
+                if (profileData.role === 'admin') {
+                    setAdminStats(results[3])
+                }
+            }
+
             setLoading(false)
         }
         fetchData()
@@ -42,7 +61,6 @@ export default function DashboardPage() {
         try {
             const result = await checkInOut(action)
             if (result.success) {
-                // Refresh today's attendance data
                 const todayData = await getTodayAttendance()
                 setTodayAttendance(todayData)
             } else {
@@ -56,6 +74,14 @@ export default function DashboardPage() {
     }
 
     const isCheckedIn = todayAttendance && !todayAttendance.check_out_time
+
+    if (loading) {
+        return <div className="p-8 flex justify-center text-text-muted">Loading dashboard...</div>
+    }
+
+    if (profile?.role === 'admin' && adminStats) {
+        return <AdminDashboard stats={adminStats} />
+    }
 
     return (
         <div className="space-y-8">
@@ -72,7 +98,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex gap-4 items-center">
                         <div className="flex gap-2">
-                            <Button 
+                            <Button
                                 onClick={() => handleCheckInOut('checkin')}
                                 disabled={actionLoading || isCheckedIn}
                                 variant="action"
@@ -81,7 +107,7 @@ export default function DashboardPage() {
                                 <LogIn className="mr-2 h-4 w-4" />
                                 Check In
                             </Button>
-                            <Button 
+                            <Button
                                 onClick={() => handleCheckInOut('checkout')}
                                 disabled={actionLoading || !isCheckedIn}
                                 variant="action"
@@ -92,16 +118,16 @@ export default function DashboardPage() {
                             </Button>
                         </div>
                         <div className="flex gap-4">
-                            <KPI_Card 
-                                icon={Clock} 
-                                label="Avg. Work Hrs" 
-                                value={attendanceData?.monthlyStats?.totalHours ? `${Math.round(attendanceData.monthlyStats.totalHours)}h` : "0h"} 
+                            <KPI_Card
+                                icon={Clock}
+                                label="Avg. Work Hrs"
+                                value={attendanceData?.monthlyStats?.totalHours ? `${Math.round(attendanceData.monthlyStats.totalHours)}h` : "0h"}
                             />
-                            <KPI_Card 
-                                icon={CheckCircle} 
-                                label="On Time" 
-                                value={attendanceData?.monthlyStats?.present && attendanceData?.monthlyStats?.total ? 
-                                    `${Math.round((attendanceData.monthlyStats.present / attendanceData.monthlyStats.total) * 100)}%` : "0%"} 
+                            <KPI_Card
+                                icon={CheckCircle}
+                                label="On Time"
+                                value={attendanceData?.monthlyStats?.present && attendanceData?.monthlyStats?.total ?
+                                    `${Math.round((attendanceData.monthlyStats.present / attendanceData.monthlyStats.total) * 100)}%` : "0%"}
                             />
                         </div>
                     </div>
@@ -141,10 +167,10 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                             )) || [
-                                <div key="no-data" className="text-center text-text-muted py-4">
-                                    No upcoming events
-                                </div>
-                            ]}
+                                    <div key="no-data" className="text-center text-text-muted py-4">
+                                        No upcoming events
+                                    </div>
+                                ]}
                         </div>
                     </div>
                 </Card>
@@ -172,23 +198,22 @@ export default function DashboardPage() {
                                         <td className="py-3 font-medium text-text-main">{leave.leave_type}</td>
                                         <td className="py-3 text-text-muted">{formatDate(leave.start_date)}</td>
                                         <td className="py-3">
-                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                                leave.status === 'Approved' ? 'bg-green-100 text-green-800' : 
-                                                leave.status === 'Rejected' ? 'bg-red-100 text-red-800' : 
-                                                'bg-yellow-100 text-yellow-800'
-                                            }`}>
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${leave.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                                                leave.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                                                    'bg-yellow-100 text-yellow-800'
+                                                }`}>
                                                 {leave.status}
                                             </span>
                                         </td>
                                         <td className="py-3 text-text-muted">{leave.days} Day(s)</td>
                                     </tr>
                                 )) || [
-                                    <tr key="no-data">
-                                        <td colSpan={4} className="py-6 text-center text-text-muted">
-                                            No leave requests found
-                                        </td>
-                                    </tr>
-                                ]}
+                                        <tr key="no-data">
+                                            <td colSpan={4} className="py-6 text-center text-text-muted">
+                                                No leave requests found
+                                            </td>
+                                        </tr>
+                                    ]}
                             </tbody>
                         </table>
                     </div>

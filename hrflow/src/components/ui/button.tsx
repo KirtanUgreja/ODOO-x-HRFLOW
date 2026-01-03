@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: "default" | "outline" | "ghost" | "link" | "action"
+    variant?: "default" | "outline" | "ghost" | "link" | "action" | "destructive"
     size?: "default" | "sm" | "lg" | "icon"
 }
 
@@ -29,6 +29,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                     {
                         "bg-primary text-primary-foreground hover:bg-primary/90": variant === "default",
                         "bg-action-button text-white hover:opacity-90 shadow-md": variant === "action",
+                        "bg-red-500 text-white hover:bg-red-600 shadow-sm": variant === "destructive",
                         "border border-input bg-background hover:bg-accent hover:text-accent-foreground": variant === "outline",
                         "hover:bg-accent hover:text-accent-foreground": variant === "ghost",
                         "text-primary underline-offset-4 hover:underline": variant === "link",
