@@ -3,6 +3,7 @@ CREATE TABLE profiles (
     id UUID REFERENCES auth.users(id) PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
+    MIDNAME
     avatar_url TEXT,
     department TEXT,
     manager_id UUID REFERENCES profiles(id),
